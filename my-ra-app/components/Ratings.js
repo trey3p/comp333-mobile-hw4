@@ -1,23 +1,15 @@
 import React, { useState, useEffect } from "react";
 import {Button, Alert, TextInput, View, FlatList, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, Modal} from "react-native";
 
+import styles from "./Styles";
 
 
-const Item = ({ item, onPress, backgroundColor, textColor }) => (
-  <TouchableOpacity onPress={onPress} style={[styles.item, backgroundColor]}>
-    <Text style={[styles.title, textColor]}>Song: {item.song} {"\n"}
-                                            User: {item.username} {"\n"}
-                                            Rating: {item.rating} {"\n"}
-                                            Review: {item.review}
-    </Text>
-  </TouchableOpacity>
-);
 
 const Ratings = () => {
 
   const [ratings, setRatings] = useState([]);  
   const [selectedId, setSelectedId] = useState(null);
-  const [isModalVisible, setisModalVisible] = useState(false);
+  const [isEditModalVisible, setisEditModalVisible] = useState(false);
   const [inputText, setinputText] = useState()
   const [username, setUsername] = useState("");
   const [rating, setRating] = useState(1);
@@ -25,6 +17,7 @@ const Ratings = () => {
   const [review, setReview] = useState("");
   const [songId, setSongId] = useState(null);
   const [editItem, seteditItem] = useState();
+  const [isAddModalVisible, setisAddModalVisible] = useState(false);
 
   useEffect(async () =>
   {
@@ -34,7 +27,20 @@ const Ratings = () => {
       
   }, []);
 
+  // Handles double rating error message
+  const onSubmit = (e) => {
+    let item = {username, song, rating, review};
+    let match = ratings.find(element => element.username === username && element.song === song)
+    if (match)
+    {
+      Alert.alert("You cannot double rate!");
+      return false;
+    }
+    else{ return true; }
 
+  }
+
+  //Refresh, called after any delete, edit, save, operation
   const refreshRatings = () => {
 
       fetch("http://127.0.0.1:8000/api/ratings/")
@@ -46,7 +52,7 @@ const Ratings = () => {
   }
 
   const onPressItem = (item) => {
-    setisModalVisible(true);
+    setisEditModalVisible(true);
     setSelectedId(item.id);
     setRating(item.rating);
     setReview(item.review);
@@ -79,10 +85,10 @@ const Ratings = () => {
       return item;
     })
     setRatings(newData);
-    refreshRatings();
+    return Promise.all(newData);
   }
 
-  const handleDeleteItem = (editItem) => {
+   function handleDeleteItem(editItem) {
     const newData = ratings.map(item => {
       if (item.id === editItem) {
         item.review = review;
@@ -99,17 +105,49 @@ const Ratings = () => {
 
       }
       return item;
-    })
+    });
+
     setRatings(newData);
-    refreshRatings();
+    return Promise.all(newData);
+    //refreshRatings();
+  }
+
+  const handleAddItem = () => {
+    return fetch("http://127.0.0.1:8000/api/ratings/", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        },
+      body: JSON.stringify({
+        username: username,
+        song: song,
+        review: review,
+        rating: rating
+      }),
+      }).then((res) => res.json)
+      .then((json) => {return json;});
+ 
+  }
+  
+  const onPressSaveAdd = (rating) => {
+    if (onSubmit())
+    {
+      checkRating(rating);
+      handleAddItem().then(() => refreshRatings());
+      //refreshRatings();
+    }
+    setisAddModalVisible(false);
+
+    return rating;
+    
   }
 
   const onPressSaveEdit = (rating) => {
     checkRating(rating);
-    handleEditItem(editItem);
-    setisModalVisible(false);
-    refreshRatings();
-  
+    handleEditItem(editItem).then(() => refreshRatings());
+    setisEditModalVisible(false);
+    
   }
 
   const checkRating = (rating) => {
@@ -130,11 +168,37 @@ const Ratings = () => {
   }
 
   const onPressDelete = (rating) => {
-    handleDeleteItem(editItem);
-    setisModalVisible(false);
-    refreshRatings();
+    handleDeleteItem(editItem).then(() => refreshRatings());
+    setisEditModalVisible(false);
+    
 
   }
+
+  const avgRating = (song) => {
+    let items = ratings.filter((rating) => rating.song === song);
+    var avg = 0;
+    items.forEach(item => {
+        avg += item.rating
+  
+        //console.log(item.rating)
+        }
+        );
+    
+    //console.log(avg);
+    return Math.round(avg/items.length * 10) / 10
+  };
+
+  const Item = ({ item, onPress, backgroundColor, textColor }) => (
+    <TouchableOpacity onPress={onPress} style={[styles.item, backgroundColor]}>
+      <Text style={[styles.title, textColor]}>Song: {item.song} {"\n"}
+                                              User: {item.username} {"\n"}
+                                              Rating: {item.rating} {"\n"}
+                                              Review: {item.review} {"\n"}
+                                              Avg. Rating: {avgRating(item.song)}
+      </Text>
+    </TouchableOpacity>
+  );
+
   const renderItem = ({ item }) => {
     const backgroundColor = item.id === selectedId ? "#6e3b6e" : "#f9c2ff";
     const color = item.id === selectedId ? 'white' : 'black';
@@ -161,15 +225,72 @@ const Ratings = () => {
         keyExtractor={(item) => item.id}
         extraData={selectedId}
       />
+      <Button 
+        title = "Post Rating"
+        onPress={() => setisAddModalVisible(true)}
+      />
       <Modal
         animationType="fade"
-        visible={isModalVisible}
-        onRequestClose={() => setisModalVisible(false)}
+        visible = {isAddModalVisible}
+        onRequestClose = {() => setisAddModalVisible(false)}
+      >
+        <View style={styles.modalView}>
+        <Button 
+          title = "Back"
+          onPress = {() => setisAddModalVisible(false)}
+        />
+        <Text style= {styles.text}>Username:</Text>
+        <TextInput
+          style = {styles.textInput}
+          onChangeText = {(text) => setUsername(text)}
+          defaultValue = {""}
+          editable = {true}
+          placeholder = {"Enter your username."}
+        />
+        <Text style = {styles.text}>Song:</Text>
+        <TextInput
+          style = {styles.textInput}
+          onChangeText = {(text) => setSong(text)}
+          defaultValue = {""}
+          editable = {true}
+          placeholderStyle = {{fontSize: 5}}
+          placeholder = {"Enter the song to review."}
+        />
+        <Text style = {styles.text} >Review:</Text>
+        <TextInput
+          style = {styles.textInput}
+          onChangeText = {(text) => setReview(text)}
+          defaultValue = {""}
+          editable = {true}
+          placeholder = {"Enter your review."}
+        />
+        <Text style = {styles.text}>Rating:</Text>
+        <TextInput
+          style = {styles.textInput}
+          onChangeText = {(text) => setRating(text)}
+          defaultValue = {""}
+          editable = {true}
+          placeholder = {"Ranging from 1 to 5!"}
+        />
+        <TouchableOpacity
+          onPress = {() => checkRating(rating) && onPressSaveAdd(rating)}
+          style = {styles.touchableSave}
+        >
+          <Text style = {styles.text}>Save</Text>
+        </TouchableOpacity>
+
+        </View>
+
+      </Modal>
+      <Modal
+        animationType="fade"
+        visible={isEditModalVisible}
+        onRequestClose={() => setisEditModalVisible(false)}
       >
         <View style={styles.modalView}>
           <Button 
           title = "Back"
-          onPress = {() => setisModalVisible(false)}
+          onPress = {() => setisEditModalVisible(false)}
         />
         <Button 
           title = "Delete"
@@ -191,7 +312,7 @@ const Ratings = () => {
           style={styles.textInput}
           keyboardType = 'numeric'
           onChangeText = {(text) => setRating(text)}
-          defaultValue = {rating}
+          defaultValue = {rating.toString()}
           editable={true}
           multiline={false}
           //onSubmitEditing = {(text) => checkRating(text)}
@@ -208,48 +329,5 @@ const Ratings = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    marginTop: StatusBar.currentHeight || 0,
-  },
-  item: {
-    borderBottomWidth: 1,
-    borderBottomColor: 'grey',
-    alignItems: 'flex-start'
-    //padding: 20,
-    //marginVertical: 8,
-    //marginHorizontal: 16,
-  },
-  title: {
-    fontSize: 32,
-  },
-  text: {
-    marginVertical: 30,
-    fontSize: 25,
-    fontWeight: 'bold',
-    marginLeft: 10
-  },
-  textInput: {
-    width: '90%',
-    height: 70,
-    borderColor: 'grey',
-    borderWidth: 1,
-    fontSize: 25
-  },
-  modalView: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  touchableSave: {
-    backgroundColor: 'grey',
-    paddingHorizontal: 100,
-    alignItems: 'center',
-    marginTop: 20
-  }
-
-
-});
 
 export default Ratings;
