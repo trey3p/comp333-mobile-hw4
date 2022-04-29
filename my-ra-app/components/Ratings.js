@@ -43,7 +43,7 @@ const Ratings = () => {
   //Refresh, called after any delete, edit, save, operation
   const refreshRatings = () => {
 
-      fetch("http:192.168.131.84:8000/api/ratings/")
+      fetch("http://127.0.0.1:8000/api/ratings/")
           .then((response) => response.json())  
           .then((res) => setRatings(res) )
           .catch((error) => console.error(error))
@@ -68,7 +68,7 @@ const Ratings = () => {
         item.review = review;
         item.rating = rating;
 
-        fetch(`http://192.168.131.84:8000/api/ratings/${item.id}/`, {
+        fetch(`http://127.0.0.1:8000/api/ratings/${item.id}/`, {
         method: "PATCH",
         headers: {
           Accept: "application/json",
@@ -96,7 +96,7 @@ const Ratings = () => {
         item.review = review;
         item.rating = rating;
 
-        fetch(`http://192.168.131.84:8000/api/ratings/${item.id}/`, {
+        fetch(`http://127.0.0.1:8000/api/ratings/${item.id}/`, {
         method: "DELETE",
         headers: {
           Accept: "application/json",
@@ -115,7 +115,7 @@ const Ratings = () => {
   }
 
   const handleAddItem = () => {
-    return fetch("http://192.168.131.84:8000/api/ratings/", {
+    return fetch("http://127.0.0.1:8000/api/ratings/", {
       method: "POST",
       headers: {
         Accept: "application/json",
