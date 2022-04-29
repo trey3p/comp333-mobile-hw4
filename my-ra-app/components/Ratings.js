@@ -132,10 +132,10 @@ const Ratings = () => {
  
   }
   
-  const onPressSaveAdd = (rating) => {
+  const onPressSaveAdd = () => {
     if (onSubmit())
     {
-      checkRating(rating);
+      checkRating();
       handleAddItem().then(() => refreshRatings());
       //refreshRatings();
     }
@@ -146,15 +146,26 @@ const Ratings = () => {
   }
 
   const onPressSaveEdit = (rating) => {
-    checkRating(rating);
+    checkRating();
     handleEditItem(editItem).then(() => refreshRatings());
     setisEditModalVisible(false);
     
   }
 
-  const checkRating = (rating) => {
-    
-    if (rating > 5) 
+  const checkRating = () => {
+    if (!username.trim()) {
+      Alert.alert("Input Error", "Please enter username!");
+      return false;
+    }
+    else if (!song.trim()) {
+      Alert.alert("Input Error", "Please enter song!");
+      return false;
+    }
+    else if (!review.trim()) {
+      Alert.alert("Input Error", "Please enter artist!");
+      return false;
+    }
+    else if (rating > 5) 
     {
       Alert.alert("Input Error", "Ratings go up to 5!");
       return false;
@@ -172,8 +183,6 @@ const Ratings = () => {
   const onPressDelete = (rating) => {
     handleDeleteItem(editItem).then(() => refreshRatings());
     setisEditModalVisible(false);
-    
-
   }
 
   const avgRating = (song) => {
@@ -279,7 +288,7 @@ const Ratings = () => {
         />
         </View>
         <TouchableOpacity
-          onPress = {() => checkRating(rating) && onPressSaveAdd(rating)}
+          onPress = {() => checkRating() && onPressSaveAdd(rating)}
           style = {styles.touchableSave}
         >
           <Text style = {styles.buttonText}>Save</Text>
@@ -334,7 +343,7 @@ const Ratings = () => {
           />
         </View>
         <TouchableOpacity
-          onPress = {() =>  checkRating(rating) && onPressSaveEdit(rating) }
+          onPress = {() =>  checkRating() && onPressSaveEdit(rating) }
           style = {styles.touchableSave}
         >
           <Text style = {styles.buttonText}>Save</Text>
