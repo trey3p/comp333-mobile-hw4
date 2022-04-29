@@ -43,7 +43,7 @@ const Ratings = () => {
   //Refresh, called after any delete, edit, save, operation
   const refreshRatings = () => {
 
-      fetch("http://127.0.0.1:8000/api/ratings/")
+      fetch("http:192.168.131.84:8000/api/ratings/")
           .then((response) => response.json())  
           .then((res) => setRatings(res) )
           .catch((error) => console.error(error))
@@ -54,6 +54,7 @@ const Ratings = () => {
   const onPressItem = (item) => {
     setisEditModalVisible(true);
     setSelectedId(item.id);
+    setSong(item.song);
     setRating(item.rating);
     setReview(item.review);
     seteditItem(item.id);
@@ -63,10 +64,11 @@ const Ratings = () => {
   const handleEditItem = (editItem) => {
     const newData = ratings.map(item => {
       if (item.id === editItem) {
+        item.song = song;
         item.review = review;
         item.rating = rating;
 
-        fetch(`http://127.0.0.1:8000/api/ratings/${item.id}/`, {
+        fetch(`http://192.168.131.84:8000/api/ratings/${item.id}/`, {
         method: "PATCH",
         headers: {
           Accept: "application/json",
@@ -94,7 +96,7 @@ const Ratings = () => {
         item.review = review;
         item.rating = rating;
 
-        fetch(`http://127.0.0.1:8000/api/ratings/${item.id}/`, {
+        fetch(`http://192.168.131.84:8000/api/ratings/${item.id}/`, {
         method: "DELETE",
         headers: {
           Accept: "application/json",
@@ -113,7 +115,7 @@ const Ratings = () => {
   }
 
   const handleAddItem = () => {
-    return fetch("http://127.0.0.1:8000/api/ratings/", {
+    return fetch("http://192.168.131.84:8000/api/ratings/", {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -191,17 +193,17 @@ const Ratings = () => {
   const Item = ({ item, onPress, backgroundColor, textColor }) => (
     <TouchableOpacity onPress={onPress} style={[styles.item, backgroundColor]}>
       <Text style={[styles.title, textColor]}>Song: {item.song} {"\n"}
+                                              Artist: {item.review} {"\n"}
                                               User: {item.username} {"\n"}
                                               Rating: {item.rating} {"\n"}
-                                              Review: {item.review} {"\n"}
                                               Avg. Rating: {avgRating(item.song)}
       </Text>
     </TouchableOpacity>
   );
 
   const renderItem = ({ item }) => {
-    const backgroundColor = item.id === selectedId ? "#6e3b6e" : "#f9c2ff";
-    const color = item.id === selectedId ? 'white' : 'black';
+    const backgroundColor = item.id === selectedId ? "#f98dc9" : "#FFF";
+    const color = item.id === selectedId ? '#FFF' : '#454545';
 
     return (
       <Item
@@ -225,20 +227,23 @@ const Ratings = () => {
         keyExtractor={(item) => item.id}
         extraData={selectedId}
       />
-      <Button 
-        title = "Post Rating"
-        onPress={() => setisAddModalVisible(true)}
-      />
+      <TouchableOpacity
+        onPress = {() => setisAddModalVisible(true)}
+        style = {styles.touchableSave}
+      >
+        <Text style = {styles.buttonText}>Post Rating</Text>
+      </TouchableOpacity>
       <Modal
         animationType="fade"
         visible = {isAddModalVisible}
         onRequestClose = {() => setisAddModalVisible(false)}
       >
         <View style={styles.modalView}>
-        <Button 
-          title = "Back"
+        <TouchableOpacity
           onPress = {() => setisAddModalVisible(false)}
-        />
+          style={styles.buttonContainer}>
+        <Text style={styles.buttonText}>Back</Text>
+        </TouchableOpacity>
         <Text style= {styles.text}>Username:</Text>
         <TextInput
           style = {styles.textInput}
@@ -256,13 +261,13 @@ const Ratings = () => {
           placeholderStyle = {{fontSize: 5}}
           placeholder = {"Enter the song to review."}
         />
-        <Text style = {styles.text} >Review:</Text>
+        <Text style = {styles.text} >Artist:</Text>
         <TextInput
           style = {styles.textInput}
           onChangeText = {(text) => setReview(text)}
           defaultValue = {""}
           editable = {true}
-          placeholder = {"Enter your review."}
+          placeholder = {"Enter the artist."}
         />
         <Text style = {styles.text}>Rating:</Text>
         <TextInput
@@ -272,14 +277,13 @@ const Ratings = () => {
           editable = {true}
           placeholder = {"Ranging from 1 to 5!"}
         />
+        </View>
         <TouchableOpacity
           onPress = {() => checkRating(rating) && onPressSaveAdd(rating)}
           style = {styles.touchableSave}
         >
-          <Text style = {styles.text}>Save</Text>
+          <Text style = {styles.buttonText}>Save</Text>
         </TouchableOpacity>
-
-        </View>
 
       </Modal>
       <Modal
@@ -288,25 +292,36 @@ const Ratings = () => {
         onRequestClose={() => setisEditModalVisible(false)}
       >
         <View style={styles.modalView}>
-          <Button 
-          title = "Back"
-          onPress = {() => setisEditModalVisible(false)}
-        />
-        <Button 
-          title = "Delete"
-          onPress = {() => onPressDelete(rating)}
-        />
-          <Text style={styles.text}>Change Review:</Text>
+          <TouchableOpacity
+            onPress = {() => setisEditModalVisible(false)}
+            style={styles.buttonContainer}>
+          <Text style={styles.buttonText}>Back</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress = {() => onPressDelete(false)}
+            style={styles.buttonContainer}>
+          <Text style={styles.buttonText}>Delete</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.text}>Change Song:</Text>
+          <TextInput 
+          style={styles.textInput}
+          onChangeText = {(text) => setSong(text)}
+          defaultValue = {song}
+          editable={true}
+          multiline={false}
+          />
+
+          <Text style={styles.text}>Change Artist:</Text>
           <TextInput 
           style={styles.textInput}
           onChangeText = {(text) => setReview(text)}
           defaultValue = {review}
           editable={true}
           multiline={false}
-          
           />
-        </View>
-        <View style={styles.modalView}>
+
           <Text style={styles.text}>Change Rating:</Text>
           <TextInput 
           style={styles.textInput}
@@ -322,7 +337,7 @@ const Ratings = () => {
           onPress = {() =>  checkRating(rating) && onPressSaveEdit(rating) }
           style = {styles.touchableSave}
         >
-          <Text style = {styles.text}>Save</Text>
+          <Text style = {styles.buttonText}>Save</Text>
         </TouchableOpacity>
       </Modal>
     </SafeAreaView>
